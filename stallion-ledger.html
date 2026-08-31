@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>種牡馬台帳</title>
+<style>
+  :root {
+    --bg: #F5F1E8;
+    --bg-panel: #EFE8D6;
+    --bg-card: #FDFBF5;
+    --border: #D8CDB4;
+    --border-light: #E4DCC9;
+    --ink: #1F2A24;
+    --ink-body: #2B2620;
+    --muted: #7A7264;
+    --muted-light: #B3ABA0;
+    --accent: #A97142;
+    --green: #2F5233;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink-body);
+    font-family: 'Hiragino Sans', 'Yu Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .header {
+    border-bottom: 2px solid var(--green);
+    background: var(--bg-panel);
+    padding: 28px 24px 20px;
+  }
+  .header-inner, .content {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  h1 {
+    margin: 0;
+    font-family: 'Shippori Mincho', 'Yu Mincho', serif;
+    font-size: 30px;
+    color: var(--ink);
+  }
+  .search-box {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+    color: var(--ink-body);
+    outline: none;
+    margin-top: 16px;
+  }
+  .lineage-search {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  .lineage-search-title {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .lineage-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .lineage-grid select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 6px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+    color: var(--ink-body);
+  }
+  #lineageSearchBtn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--green);
+    color: #F3F7F2;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  @media (max-width: 480px) {
+    .lineage-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .bms-search {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  .bms-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .bms-grid label {
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .bms-grid select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 6px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+    color: var(--ink-body);
+  }
+  .bms-search-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #33418C;
+    color: #F3F7F2;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #count {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .content { padding: 20px 24px 60px; }
+  .placeholder {
+    font-size: 13px;
+    color: var(--muted-light);
+    padding: 40px 0;
+    text-align: center;
+  }
+  .error { color: #A64B2A; font-size: 13px; }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .card {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font: inherit;
+  }
+  .card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-name .sub { color: var(--accent); font-size: 13px; font-weight: 400; }
+  .card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .badges { display: flex; gap: 4px; flex-shrink: 0; }
+  .rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Shippori Mincho', 'Yu Mincho', serif;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+  }
+  .rank-dash { color: var(--muted-light); }
+
+  /* Detail overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(31,26,20,0.55);
+    display: none;
+    justify-content: flex-end;
+    z-index: 50;
+  }
+  .overlay.open { display: flex; }
+  .panel {
+    width: min(480px, 100%);
+    height: 100%;
+    background: var(--bg);
+    overflow-y: auto;
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 24px rgba(0,0,0,0.25);
+  }
+  .panel-header {
+    padding: 20px 24px;
+    border-bottom: 2px solid var(--green);
+    background: var(--bg-panel);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .panel-header h2 {
+    margin: 4px 0 0;
+    font-family: 'Shippori Mincho', 'Yu Mincho', serif;
+    font-size: 24px;
+    color: var(--ink);
+  }
+  .panel-header .sub { font-size: 15px; color: var(--accent); margin-left: 8px; }
+  #closeBtn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  .panel-body { padding: 20px 24px; }
+  .section-title {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    margin: 24px 0 8px;
+    font-weight: 700;
+  }
+  .section-title:first-child { margin-top: 0; }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; }
+  .stat-value { font-size: 14px; color: var(--ink-body); font-weight: 600; }
+  .talent-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+  }
+  .talent-title { font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .talent-desc { font-size: 13px; color: #4A4438; white-space: pre-line; line-height: 1.6; }
+  .no-talent { font-size: 13px; color: var(--muted-light); }
+  .factor-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .factor-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--ink-body);
+  }
+  .factor-value {
+    background: var(--green);
+    color: #F3F7F2;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0 5px;
+  }
+  .pedigree-row { display: flex; gap: 8px; }
+  .pedigree-side { color: var(--accent); min-width: 56px; flex-shrink: 0; }
+  #pedigree { font-size: 12px; color: #4A4438; line-height: 1.9; }
+
+  /* 血統ツリー表示 (rowspanを使った本物のテーブル) */
+  .ptable { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  .ptable col.ped-col { width: 40px; }
+  .ptable td { border: 1px solid var(--bg); padding: 0; }
+  .ptable td.ped-label {
+    text-align: center;
+    vertical-align: middle;
+    color: #F5F1E8;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 6px 2px;
+  }
+  .ptable td.ped-label.father { background: #33418C; }
+  .ptable td.ped-label.mother { background: #B23B39; }
+  .ptable td.ped-name {
+    padding: 6px 10px;
+    background: var(--bg-card);
+    color: var(--ink-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .source-link {
+    display: inline-block;
+    margin-top: 24px;
+    font-size: 12px;
+    color: var(--green);
+    text-decoration: underline;
+  }
+
+  /* タブ切り替え */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-card);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--green);
+    color: #F3F7F2;
+    border-color: var(--green);
+  }
+  .bm-card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .notable-badge {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 1px 6px;
+    margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="eyebrow">STALLION LEDGER</div>
+    <h1>親系統検索</h1>
+
+    <div class="tabs">
+      <button id="tabStallion" class="tab-btn active">種牡馬</button>
+      <button id="tabBroodmare" class="tab-btn">繁殖牝馬</button>
+    </div>
+
+    <div id="stallionControls">
+      <input id="search" class="search-box" placeholder="馬名・系統で検索(例: アイリッシュリヴァー / テディ系)" />
+
+      <div class="lineage-search">
+        <div class="lineage-search-title">親系統で検索(4系統を選択)</div>
+        <div class="lineage-grid">
+          <select class="lineageSelect"></select>
+          <select class="lineageSelect"></select>
+          <select class="lineageSelect"></select>
+          <select class="lineageSelect"></select>
+        </div>
+        <button id="lineageSearchBtn">この4系統で検索</button>
+
+        <div class="bms-search">
+          <div class="lineage-search-title">親系統の特定2箇所で検索(順不同・どちらかに該当すればOK)</div>
+          <div class="bms-grid">
+            <div>
+              <label for="bmsInputA">系統1</label>
+              <select id="bmsInputA"></select>
+            </div>
+            <div>
+              <label for="bmsInputB">系統2</label>
+              <select id="bmsInputB"></select>
+            </div>
+          </div>
+          <button id="bmsSearchBtn" class="bms-search-btn">この2箇所で検索</button>
+        </div>
+      </div>
+
+      <div id="count"></div>
+    </div>
+
+    <div id="broodmareControls" style="display:none;">
+      <input id="bmSearch" class="search-box" placeholder="馬名・系統・父・母で検索(例: アイウィルフォロー / サンインロー系)" />
+
+      <div class="bms-search" style="margin-top:16px; border-top:none; padding-top:0;">
+        <div class="lineage-search-title">親系統の特定2箇所で検索(順不同・どちらかに該当すればOK)</div>
+        <div class="bms-grid">
+          <div>
+            <label for="bmLineageInputA">系統1</label>
+            <select id="bmLineageInputA"></select>
+          </div>
+          <div>
+            <label for="bmLineageInputB">系統2</label>
+            <select id="bmLineageInputB"></select>
+          </div>
+        </div>
+        <button id="bmLineageSearchBtn" class="bms-search-btn">この2箇所で検索</button>
+      </div>
+
+      <div id="bmCount"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div id="stallionContent">
+    <div id="error" class="error" style="display:none;"></div>
+    <div id="loading" class="placeholder">データを読み込み中です(8MB強あるため数秒かかります)…</div>
+    <div id="emptyPrompt" class="placeholder" style="display:none;">検索ボックスに馬名や系統名を入力してください</div>
+    <div id="noResult" class="placeholder" style="display:none;">該当する種牡馬が見つかりませんでした</div>
+    <div id="list" class="list"></div>
+  </div>
+
+  <div id="broodmareContent" style="display:none;">
+    <div id="bmError" class="error" style="display:none;"></div>
+    <div id="bmLoading" class="placeholder" style="display:none;">データを読み込み中です…</div>
+    <div id="bmEmptyPrompt" class="placeholder">検索ボックスに馬名・系統・父・母名を入力してください</div>
+    <div id="bmNoResult" class="placeholder" style="display:none;">該当する繁殖牝馬が見つかりませんでした</div>
+    <div id="bmList" class="list"></div>
+  </div>
+</div>
+
+<div id="overlay" class="overlay">
+  <div id="panel" class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="eyebrow" id="panelCategory" style="color:var(--muted); letter-spacing:0.1em;"></div>
+        <h2 id="panelName"></h2>
+      </div>
+      <button id="closeBtn" aria-label="閉じる">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="section-title">能力</div>
+      <div id="statList"></div>
+
+      <div class="section-title">非凡な才能</div>
+      <div id="talentBox"></div>
+
+      <div id="factorSection" style="display:none;">
+        <div class="section-title">因子</div>
+        <div id="factorChips" class="factor-chips"></div>
+      </div>
+
+      <div id="pedigreeSection" style="display:none;">
+        <div class="section-title">血統</div>
+        <div id="pedigree"></div>
+      </div>
+
+      <a id="sourceLink" class="source-link" target="_blank" rel="noreferrer" style="display:none;">元ページを見る ↗</a>
+    </div>
+  </div>
+</div>
+
+<div id="bmOverlay" class="overlay">
+  <div id="bmPanel" class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="eyebrow" id="bmPanelCategory" style="color:var(--muted); letter-spacing:0.1em;"></div>
+        <h2 id="bmPanelName"></h2>
+      </div>
+      <button id="bmCloseBtn" aria-label="閉じる">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="section-title">基本情報</div>
+      <div id="bmStatList"></div>
+
+      <div id="bmFactorSection" style="display:none;">
+        <div class="section-title">因子</div>
+        <div id="bmFactorChips" class="factor-chips"></div>
+      </div>
+
+      <div id="bmPedigreeSection" style="display:none;">
+        <div class="section-title">血統</div>
+        <div id="bmPedigree"></div>
+      </div>
+
+      <a id="bmSourceLink" class="source-link" target="_blank" rel="noreferrer" style="display:none;">元ページを見る ↗</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA_URL = "https://raw.githubusercontent.com/otameshi-test/boba-data/refs/heads/main/stallions-data.json";
+const BROODMARE_DATA_URL = "https://raw.githubusercontent.com/otameshi-test/boba-data/refs/heads/main/broodmares-data.json";
+
+let BROODMARE_DATA = null;
+let bmFetchStarted = false;
+
+document.getElementById("tabStallion").addEventListener("click", () => {
+  document.getElementById("tabStallion").classList.add("active");
+  document.getElementById("tabBroodmare").classList.remove("active");
+  document.getElementById("stallionControls").style.display = "block";
+  document.getElementById("broodmareControls").style.display = "none";
+  document.getElementById("stallionContent").style.display = "block";
+  document.getElementById("broodmareContent").style.display = "none";
+});
+
+document.getElementById("tabBroodmare").addEventListener("click", () => {
+  document.getElementById("tabBroodmare").classList.add("active");
+  document.getElementById("tabStallion").classList.remove("active");
+  document.getElementById("broodmareControls").style.display = "block";
+  document.getElementById("stallionControls").style.display = "none";
+  document.getElementById("broodmareContent").style.display = "block";
+  document.getElementById("stallionContent").style.display = "none";
+
+  if (!bmFetchStarted) {
+    bmFetchStarted = true;
+    document.getElementById("bmLoading").style.display = "block";
+    document.getElementById("bmEmptyPrompt").style.display = "none";
+    fetch(BROODMARE_DATA_URL)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(json => {
+        BROODMARE_DATA = json;
+        document.getElementById("bmLoading").style.display = "none";
+        document.getElementById("bmEmptyPrompt").style.display = "block";
+      })
+      .catch(err => {
+        document.getElementById("bmLoading").style.display = "none";
+        const errEl = document.getElementById("bmError");
+        errEl.style.display = "block";
+        errEl.textContent = `データの取得に失敗しました: ${err.message}`;
+      });
+  }
+});
+
+const RANK_STYLES = {
+  "◎": { bg: "#B8860B", fg: "#FFF8E7" },
+  "○": { bg: "#3D6B4A", fg: "#F3F7F2" },
+  "△": { bg: "#8A8478", fg: "#F5F1E8" },
+  "A": { bg: "#2F5233", fg: "#F3F7F2" },
+  "B": { bg: "#A97142", fg: "#FFF8E7" },
+  "C": { bg: "#8C5B4A", fg: "#F5F1E8" },
+};
+
+let DATA = null;
+
+// pedigree/parentLineage/childLineage共通の階層ツリー描画
+// entries: [{depth, path: ["父","父","母","父"], name}, ...] (元サイトと同じ4世代分岐)
+// 元のHTMLと同じロジックで rowspan/colspan を逆算し、本物の<table>として描画する
+function renderPedigreeTree(entries, maxDepth = 4) {
+  if (!entries || entries.length === 0) return "";
+  const active = new Array(maxDepth).fill(0);
+
+  let html = `<table class="ptable"><colgroup>`;
+  for (let c = 0; c < maxDepth; c++) html += `<col class="ped-col" />`;
+  html += `<col />`; // 名前列は残り幅を自動で使う
+  html += `</colgroup><tbody>`;
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    let rowHtml = "<tr>";
+    for (let c = 0; c < entry.depth; c++) {
+      if (active[c] > 0) continue; // すでに上の行のrowspanで埋まっている
+
+      const prefix = entry.path.slice(0, c + 1).join(">");
+      let span = 0;
+      for (let j = i; j < entries.length; j++) {
+        if (entries[j].depth <= c) break;
+        if (entries[j].path.slice(0, c + 1).join(">") !== prefix) break;
+        span++;
+      }
+      active[c] = span;
+      const cls = entry.path[c] === "父" ? "father" : "mother";
+      rowHtml += `<td class="ped-label ${cls}"${span > 1 ? ` rowspan="${span}"` : ""}>${entry.path[c]}</td>`;
+    }
+    const nameColspan = maxDepth - entry.depth + 1;
+    rowHtml += `<td class="ped-name"${nameColspan > 1 ? ` colspan="${nameColspan}"` : ""}>${escapeHTML(entry.name)}</td>`;
+    rowHtml += "</tr>";
+    html += rowHtml;
+
+    for (let c = 0; c < maxDepth; c++) {
+      if (active[c] > 0) active[c] -= 1;
+    }
+  }
+
+  html += `</tbody></table>`;
+  return html;
+}
+
+const LINEAGE_NAMES = [
+  "Eclipse", "Fairway", "Hampton", "Herod", "Himyar", "Matchem",
+  "Nasrullah", "Native Dancer", "Nearctic", "Phalaris", "Royal Charger",
+  "St.Simon", "Swynford", "Teddy", "Tom Fool",
+];
+
+function populateLineageSelects() {
+  document.querySelectorAll(".lineageSelect").forEach(sel => {
+    sel.innerHTML =
+      `<option value="">未選択</option>` +
+      LINEAGE_NAMES.map(n => `<option value="${n}">${n}</option>`).join("");
+  });
+}
+populateLineageSelects();
+populateBmsSelects();
+
+document.getElementById("lineageSearchBtn").addEventListener("click", () => {
+  if (!DATA) return;
+
+  const selected = Array.from(document.querySelectorAll(".lineageSelect"))
+    .map(sel => sel.value)
+    .filter(v => v);
+
+  const emptyPrompt = document.getElementById("emptyPrompt");
+  const noResult = document.getElementById("noResult");
+  const countEl = document.getElementById("count");
+
+  if (selected.length === 0) {
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み`;
+    document.getElementById("list").innerHTML = "";
+    return;
+  }
+
+  // 選んだ系統を重複込みでカウント(同じ系統を2つ選んだら2つ必要)
+  const required = {};
+  selected.forEach(name => { required[name] = (required[name] || 0) + 1; });
+
+  const matches = DATA.filter(s => {
+    const avail = {};
+    (s.parentLineage || []).forEach(entry => { avail[entry.name] = (avail[entry.name] || 0) + 1; });
+    return Object.entries(required).every(([name, count]) => (avail[name] || 0) >= count);
+  });
+
+  document.getElementById("search").value = "";
+  emptyPrompt.style.display = "none";
+  noResult.style.display = matches.length === 0 ? "block" : "none";
+  countEl.textContent = `系統検索(${selected.join(" / ")}): ${matches.length}件`;
+  renderList(matches.slice(0, 150));
+});
+
+function rankBadgeHTML(value) {
+  if (!value) return '<span class="rank-dash">—</span>';
+  const style = RANK_STYLES[value] || { bg: "#6B6459", fg: "#F5F1E8" };
+  return `<span class="rank-badge" style="background:${style.bg};color:${style.fg};">${value}</span>`;
+}
+
+function escapeHTML(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+function renderList(items) {
+  const listEl = document.getElementById("list");
+  listEl.innerHTML = items.map(s => `
+    <button class="card" data-id="${escapeHTML(s.id)}">
+      <div style="min-width:0;">
+        <div class="card-name">
+          ${escapeHTML(s.name)}${s.subName ? `<span class="sub"> -${escapeHTML(s.subName)}-</span>` : ""}
+        </div>
+        <div class="card-meta">${escapeHTML(s.category)} ・ ${escapeHTML(s.stats["距離"])} ・ ${escapeHTML(s.stats["脚質"])}</div>
+      </div>
+      <div class="badges">
+        ${rankBadgeHTML(s.stats["実績"])}
+        ${rankBadgeHTML(s.stats["底力"])}
+      </div>
+    </button>
+  `).join("");
+
+  listEl.querySelectorAll(".card").forEach(btn => {
+    btn.addEventListener("click", () => openDetail(btn.dataset.id));
+  });
+}
+
+function runSearch() {
+  const q = document.getElementById("search").value.trim();
+  const emptyPrompt = document.getElementById("emptyPrompt");
+  const noResult = document.getElementById("noResult");
+  const countEl = document.getElementById("count");
+
+  if (!q) {
+    document.getElementById("list").innerHTML = "";
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = DATA ? `全 ${DATA.length.toLocaleString()} 件を読み込み済み` : "";
+    return;
+  }
+
+  const filtered = DATA.filter(s =>
+    s.name.includes(q) || (s.subName && s.subName.includes(q)) || s.category.includes(q)
+  ).slice(0, 150);
+
+  emptyPrompt.style.display = "none";
+  noResult.style.display = filtered.length === 0 ? "block" : "none";
+  countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み / ${filtered.length}件表示中(最大150件)`;
+  renderList(filtered);
+}
+
+function openDetail(id) {
+  const s = DATA.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById("panelCategory").textContent = s.category;
+  document.getElementById("panelName").innerHTML =
+    escapeHTML(s.name) + (s.subName ? `<span class="sub">-${escapeHTML(s.subName)}-</span>` : "");
+
+  const textKeys = ["距離", "成長", "脚質"];
+  const rankKeys = ["適応力", "体質", "気性", "実績", "底力", "安定"];
+  let statHTML = "";
+  textKeys.forEach(k => {
+    statHTML += `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value">${escapeHTML(s.stats[k]) || "—"}</span></div>`;
+  });
+  rankKeys.forEach(k => {
+    statHTML += `<div class="stat-row"><span class="stat-label">${k}</span>${rankBadgeHTML(s.stats[k])}</div>`;
+  });
+  document.getElementById("statList").innerHTML = statHTML;
+
+  const talentBox = document.getElementById("talentBox");
+  if (s.specialTalent && s.specialTalent.title) {
+    talentBox.innerHTML = `
+      <div class="talent-box">
+        <div class="talent-title">${escapeHTML(s.specialTalent.title)}</div>
+        <div class="talent-desc">${escapeHTML(s.specialTalent.description)}</div>
+      </div>`;
+  } else {
+    talentBox.innerHTML = `<div class="no-talent">非凡な才能はありません</div>`;
+  }
+
+  const topFactors = [...s.factors].filter(f => f.value > 0).sort((a, b) => b.value - a.value);
+  const factorSection = document.getElementById("factorSection");
+  if (topFactors.length > 0) {
+    factorSection.style.display = "block";
+    document.getElementById("factorChips").innerHTML = topFactors.map(f => `
+      <div class="factor-chip">${escapeHTML(f.name)}<span class="factor-value">${f.value}</span></div>
+    `).join("");
+  } else {
+    factorSection.style.display = "none";
+  }
+
+  const pedigreeSection = document.getElementById("pedigreeSection");
+  if (s.pedigree && s.pedigree.length > 0) {
+    pedigreeSection.style.display = "block";
+    document.getElementById("pedigree").innerHTML = renderPedigreeTree(s.pedigree);
+  } else {
+    pedigreeSection.style.display = "none";
+  }
+
+  const sourceLink = document.getElementById("sourceLink");
+  if (s.url) {
+    sourceLink.href = s.url;
+    sourceLink.style.display = "inline-block";
+  } else {
+    sourceLink.style.display = "none";
+  }
+
+  document.getElementById("overlay").classList.add("open");
+}
+
+document.getElementById("closeBtn").addEventListener("click", () => {
+  document.getElementById("overlay").classList.remove("open");
+});
+document.getElementById("overlay").addEventListener("click", (e) => {
+  if (e.target.id === "overlay") document.getElementById("overlay").classList.remove("open");
+});
+document.getElementById("search").addEventListener("input", runSearch);
+
+const BMS_POS_A = "父>母>父"; // 3代前・父側で母方経由の父
+const BMS_POS_B = "母>母>父"; // 3代前・母側で母方経由の父
+
+function findByPath(entries, pathStr) {
+  return (entries || []).find(e => e.path.join(">") === pathStr);
+}
+
+function populateBmsSelects() {
+  const options =
+    `<option value="">未選択</option>` +
+    LINEAGE_NAMES.map(n => `<option value="${n}">${n}</option>`).join("");
+  document.getElementById("bmsInputA").innerHTML = options;
+  document.getElementById("bmsInputB").innerHTML = options;
+}
+
+document.getElementById("bmsSearchBtn").addEventListener("click", () => {
+  if (!DATA) return;
+
+  const valA = document.getElementById("bmsInputA").value.trim();
+  const valB = document.getElementById("bmsInputB").value.trim();
+
+  const emptyPrompt = document.getElementById("emptyPrompt");
+  const noResult = document.getElementById("noResult");
+  const countEl = document.getElementById("count");
+
+  if (!valA && !valB) {
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み`;
+    document.getElementById("list").innerHTML = "";
+    return;
+  }
+
+  const selected = [valA, valB].filter(Boolean);
+  const matches = DATA.filter(s => {
+    const a = findByPath(s.parentLineage, BMS_POS_A);
+    const b = findByPath(s.parentLineage, BMS_POS_B);
+    const available = [];
+    if (a) available.push(a.name);
+    if (b) available.push(b.name);
+
+    // 順不同で判定: 選んだ値それぞれが、2箇所のどちらかに(重複込みで)存在すればOK
+    const remaining = [...available];
+    return selected.every(val => {
+      const idx = remaining.indexOf(val);
+      if (idx === -1) return false;
+      remaining.splice(idx, 1);
+      return true;
+    });
+  });
+
+  document.getElementById("search").value = "";
+  emptyPrompt.style.display = "none";
+  noResult.style.display = matches.length === 0 ? "block" : "none";
+  countEl.textContent = `親系統2箇所検索(${selected.join(" / ")}): ${matches.length}件`;
+  renderList(matches.slice(0, 150));
+});
+
+fetch(DATA_URL)
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  })
+  .then(json => {
+    DATA = json;
+    document.getElementById("loading").style.display = "none";
+    runSearch();
+  })
+  .catch(err => {
+    document.getElementById("loading").style.display = "none";
+    const errEl = document.getElementById("error");
+    errEl.style.display = "block";
+    errEl.textContent = `データの取得に失敗しました: ${err.message}`;
+  });
+
+// ===== 繁殖牝馬 =====
+
+function renderBmList(items) {
+  const listEl = document.getElementById("bmList");
+  listEl.innerHTML = items.map(bm => `
+    <button class="card" data-id="${escapeHTML(bm.id)}">
+      <div style="min-width:0;">
+        <div class="card-name">
+          ${bm.isNotable ? '<span class="notable-badge">名牝</span>' : ""}${escapeHTML(bm.name)}
+        </div>
+        <div class="bm-card-meta">${escapeHTML(bm.category)} ・ ${escapeHTML(bm.coatColor)} ・ 父:${escapeHTML(bm.sire)}</div>
+      </div>
+    </button>
+  `).join("");
+
+  listEl.querySelectorAll(".card").forEach(btn => {
+    btn.addEventListener("click", () => openBmDetail(btn.dataset.id));
+  });
+}
+
+function bmRunSearch() {
+  if (!BROODMARE_DATA) return;
+  const q = document.getElementById("bmSearch").value.trim();
+  const emptyPrompt = document.getElementById("bmEmptyPrompt");
+  const noResult = document.getElementById("bmNoResult");
+  const countEl = document.getElementById("bmCount");
+
+  if (!q) {
+    document.getElementById("bmList").innerHTML = "";
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = `全 ${BROODMARE_DATA.length.toLocaleString()} 件を読み込み済み`;
+    return;
+  }
+
+  const filtered = BROODMARE_DATA.filter(bm =>
+    bm.name.includes(q) || bm.category.includes(q) ||
+    (bm.sire && bm.sire.includes(q)) || (bm.dam && bm.dam.includes(q)) || (bm.damSire && bm.damSire.includes(q))
+  ).slice(0, 150);
+
+  emptyPrompt.style.display = "none";
+  noResult.style.display = filtered.length === 0 ? "block" : "none";
+  countEl.textContent = `全 ${BROODMARE_DATA.length.toLocaleString()} 件を読み込み済み / ${filtered.length}件表示中(最大150件)`;
+  renderBmList(filtered);
+}
+
+function openBmDetail(id) {
+  const bm = BROODMARE_DATA.find(x => x.id === id);
+  if (!bm) return;
+
+  document.getElementById("bmPanelCategory").textContent = bm.category;
+  document.getElementById("bmPanelName").innerHTML =
+    (bm.isNotable ? '<span class="notable-badge">名牝</span>' : "") + escapeHTML(bm.name);
+
+  const statHTML = `
+    <div class="stat-row"><span class="stat-label">毛色</span><span class="stat-value">${escapeHTML(bm.coatColor) || "—"}</span></div>
+    <div class="stat-row"><span class="stat-label">父</span><span class="stat-value">${escapeHTML(bm.sire) || "—"}</span></div>
+    <div class="stat-row"><span class="stat-label">母</span><span class="stat-value">${escapeHTML(bm.dam) || "—"}</span></div>
+    <div class="stat-row"><span class="stat-label">母父</span><span class="stat-value">${escapeHTML(bm.damSire) || "—"}</span></div>
+  `;
+  document.getElementById("bmStatList").innerHTML = statHTML;
+
+  const topFactors = [...(bm.factors || [])].filter(f => f.value > 0).sort((a, b) => b.value - a.value);
+  const factorSection = document.getElementById("bmFactorSection");
+  if (topFactors.length > 0) {
+    factorSection.style.display = "block";
+    document.getElementById("bmFactorChips").innerHTML = topFactors.map(f => `
+      <div class="factor-chip">${escapeHTML(f.name)}<span class="factor-value">${f.value}</span></div>
+    `).join("");
+  } else {
+    factorSection.style.display = "none";
+  }
+
+  const pedigreeSection = document.getElementById("bmPedigreeSection");
+  if (bm.pedigree && bm.pedigree.length > 0) {
+    pedigreeSection.style.display = "block";
+    document.getElementById("bmPedigree").innerHTML = renderPedigreeTree(bm.pedigree);
+  } else {
+    pedigreeSection.style.display = "none";
+  }
+
+  const sourceLink = document.getElementById("bmSourceLink");
+  if (bm.url) {
+    sourceLink.href = bm.url;
+    sourceLink.style.display = "inline-block";
+  } else {
+    sourceLink.style.display = "none";
+  }
+
+  document.getElementById("bmOverlay").classList.add("open");
+}
+
+document.getElementById("bmCloseBtn").addEventListener("click", () => {
+  document.getElementById("bmOverlay").classList.remove("open");
+});
+document.getElementById("bmOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "bmOverlay") document.getElementById("bmOverlay").classList.remove("open");
+});
+document.getElementById("bmSearch").addEventListener("input", bmRunSearch);
+
+function populateBmLineageSelects() {
+  const options =
+    `<option value="">未選択</option>` +
+    LINEAGE_NAMES.map(n => `<option value="${n}">${n}</option>`).join("");
+  document.getElementById("bmLineageInputA").innerHTML = options;
+  document.getElementById("bmLineageInputB").innerHTML = options;
+}
+populateBmLineageSelects();
+
+document.getElementById("bmLineageSearchBtn").addEventListener("click", () => {
+  if (!BROODMARE_DATA) return;
+
+  const valA = document.getElementById("bmLineageInputA").value.trim();
+  const valB = document.getElementById("bmLineageInputB").value.trim();
+
+  const emptyPrompt = document.getElementById("bmEmptyPrompt");
+  const noResult = document.getElementById("bmNoResult");
+  const countEl = document.getElementById("bmCount");
+
+  const selected = [valA, valB].filter(Boolean);
+  if (selected.length === 0) {
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = `全 ${BROODMARE_DATA.length.toLocaleString()} 件を読み込み済み`;
+    document.getElementById("bmList").innerHTML = "";
+    return;
+  }
+
+  const matches = BROODMARE_DATA.filter(bm => {
+    const a = findByPath(bm.parentLineage, BMS_POS_A);
+    const b = findByPath(bm.parentLineage, BMS_POS_B);
+    const available = [];
+    if (a) available.push(a.name);
+    if (b) available.push(b.name);
+
+    const remaining = [...available];
+    return selected.every(val => {
+      const idx = remaining.indexOf(val);
+      if (idx === -1) return false;
+      remaining.splice(idx, 1);
+      return true;
+    });
+  });
+
+  document.getElementById("bmSearch").value = "";
+  emptyPrompt.style.display = "none";
+  noResult.style.display = matches.length === 0 ? "block" : "none";
+  countEl.textContent = `親系統2箇所検索(${selected.join(" / ")}): ${matches.length}件`;
+  renderBmList(matches.slice(0, 150));
+});
+</script>
+</body>
+</html>
