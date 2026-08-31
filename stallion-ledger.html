@@ -170,9 +170,8 @@
     font-size: 15px;
     font-weight: 600;
     color: var(--ink);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
   .card-name .sub { color: var(--accent); font-size: 13px; font-weight: 400; }
   .card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -668,10 +667,6 @@ function renderList(items) {
           ${escapeHTML(s.name)}${s.subName ? `<span class="sub"> -${escapeHTML(s.subName)}-</span>` : ""}${s.specialTalent && s.specialTalent.title ? `<span class="notable-badge">非凡：${escapeHTML(s.specialTalent.title)}</span>` : ""}
         </div>
         <div class="card-meta">${escapeHTML(s.category)} ・ ${escapeHTML(s.stats["距離"])} ・ ${escapeHTML(s.stats["脚質"])}</div>
-      </div>
-      <div class="badges">
-        ${rankBadgeHTML(s.stats["実績"])}
-        ${rankBadgeHTML(s.stats["底力"])}
       </div>
     </button>
   `).join("");
