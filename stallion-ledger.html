@@ -845,13 +845,26 @@ fetch(DATA_URL)
 
 // ===== 繁殖牝馬 =====
 
+// 繁殖牝馬のカテゴリアイコン→表示ラベル変換
+// list_icn_cat_sale_08.png は無表示、それ以外はラベルを表示する
+const CATEGORY_LABEL_MAP = {
+  "list_icn_cat_sale_09.png": "名牝",
+  "list_icn_cat_sale_08.png": "",
+  "list_icn_cat_sale_07.png": "可",
+  "list_icn_cat_sale_06.png": "良",
+  "list_icn_cat_sale_05.png": "優",
+};
+function categoryRankLabel(icon) {
+  return CATEGORY_LABEL_MAP[icon] || "";
+}
+
 function renderBmList(items) {
   const listEl = document.getElementById("bmList");
   listEl.innerHTML = items.map(bm => `
     <button class="card" data-id="${escapeHTML(bm.id)}">
       <div style="min-width:0;">
         <div class="card-name">
-          ${bm.isNotable ? '<span class="notable-badge">名牝</span>' : ""}${escapeHTML(bm.name)}
+          ${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}${escapeHTML(bm.name)}
         </div>
         <div class="bm-card-meta">${escapeHTML(bm.category)} ・ ${escapeHTML(bm.coatColor)} ・ 父:${escapeHTML(bm.sire)}</div>
       </div>
@@ -895,7 +908,7 @@ function openBmDetail(id) {
 
   document.getElementById("bmPanelCategory").textContent = bm.category;
   document.getElementById("bmPanelName").innerHTML =
-    (bm.isNotable ? '<span class="notable-badge">名牝</span>' : "") + escapeHTML(bm.name);
+    (categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : "") + escapeHTML(bm.name);
 
   const statHTML = `
     <div class="stat-row"><span class="stat-label">毛色</span><span class="stat-value">${escapeHTML(bm.coatColor) || "—"}</span></div>
