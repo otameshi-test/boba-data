@@ -281,6 +281,43 @@
     font-weight: 700;
     padding: 0 5px;
   }
+
+  /* 因子グリッド表示(全14項目を常に表示) */
+  .factor-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 4px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .factor-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 32px;
+  }
+  .factor-cell .factor-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+  }
+  .factor-cell .factor-num {
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .factor-cell.has-value .factor-num { color: var(--ink); }
   .pedigree-row { display: flex; gap: 8px; }
   .pedigree-side { color: var(--accent); min-width: 56px; flex-shrink: 0; }
   #pedigree { font-size: 12px; color: #4A4438; line-height: 1.9; }
@@ -450,7 +487,7 @@
       <div class="section-title">非凡な才能</div>
       <div id="talentBox"></div>
 
-      <div id="factorSection" style="display:none;">
+      <div id="factorSection">
         <div class="section-title">因子</div>
         <div id="factorChips" class="factor-chips"></div>
       </div>
@@ -478,7 +515,7 @@
       <div class="section-title">基本情報</div>
       <div id="bmStatList"></div>
 
-      <div id="bmFactorSection" style="display:none;">
+      <div id="bmFactorSection">
         <div class="section-title">因子</div>
         <div id="bmFactorChips" class="factor-chips"></div>
       </div>
@@ -554,6 +591,40 @@ let DATA = null;
 // pedigree/parentLineage/childLineage共通の階層ツリー描画
 // entries: [{depth, path: ["父","父","母","父"], name}, ...] (元サイトと同じ4世代分岐)
 // 元のHTMLと同じロジックで rowspan/colspan を逆算し、本物の<table>として描画する
+// 因子表示: 14項目を常に色分けグリッドで表示する(種牡馬・繁殖牝馬共通)
+const FACTOR_STYLE = {
+  "短距離": { label: "短", color: "#D9A23B" },
+  "速力":   { label: "速", color: "#4A9F4F" },
+  "底力":   { label: "底", color: "#D9534F" },
+  "長距離": { label: "長", color: "#4A6FD1" },
+  "疾走":   { label: "走", color: "#4FAE4F" },
+  "中距離": { label: "中", color: "#8B5FBF" },
+  "強芯":   { label: "強", color: "#3E6FA8" },
+  "雷駆":   { label: "雷", color: "#7B5FC7" },
+  "堅実":   { label: "堅", color: "#C24F8C" },
+  "気性難": { label: "難", color: "#C0392B" },
+  "適応力": { label: "適", color: "#38A5A5" },
+  "丈夫":   { label: "丈", color: "#4FAE4F" },
+  "早熟":   { label: "早", color: "#D9B93D" },
+  "晩成":   { label: "晩", color: "#4FAE4F" },
+};
+const FACTOR_ORDER = Object.keys(FACTOR_STYLE);
+
+function renderFactorGrid(factors) {
+  const byName = {};
+  (factors || []).forEach(f => { byName[f.name] = f.value; });
+
+  return `<div class="factor-grid">` + FACTOR_ORDER.map(name => {
+    const style = FACTOR_STYLE[name];
+    const value = byName[name] || 0;
+    return `
+      <div class="factor-cell${value > 0 ? " has-value" : ""}" title="${escapeHTML(name)}">
+        <div class="factor-circle" style="background:${style.color};">${style.label}</div>
+        <div class="factor-num">${String(value).padStart(2, "0")}</div>
+      </div>`;
+  }).join("") + `</div>`;
+}
+
 function renderPedigreeTree(entries, maxDepth = 4) {
   if (!entries || entries.length === 0) return "";
   const active = new Array(maxDepth).fill(0);
@@ -730,16 +801,7 @@ function openDetail(id) {
     talentBox.innerHTML = `<div class="no-talent">非凡な才能はありません</div>`;
   }
 
-  const topFactors = [...s.factors].filter(f => f.value > 0).sort((a, b) => b.value - a.value);
-  const factorSection = document.getElementById("factorSection");
-  if (topFactors.length > 0) {
-    factorSection.style.display = "block";
-    document.getElementById("factorChips").innerHTML = topFactors.map(f => `
-      <div class="factor-chip">${escapeHTML(f.name)}<span class="factor-value">${f.value}</span></div>
-    `).join("");
-  } else {
-    factorSection.style.display = "none";
-  }
+  document.getElementById("factorChips").innerHTML = renderFactorGrid(s.factors);
 
   const pedigreeSection = document.getElementById("pedigreeSection");
   if (s.pedigree && s.pedigree.length > 0) {
@@ -918,16 +980,7 @@ function openBmDetail(id) {
   `;
   document.getElementById("bmStatList").innerHTML = statHTML;
 
-  const topFactors = [...(bm.factors || [])].filter(f => f.value > 0).sort((a, b) => b.value - a.value);
-  const factorSection = document.getElementById("bmFactorSection");
-  if (topFactors.length > 0) {
-    factorSection.style.display = "block";
-    document.getElementById("bmFactorChips").innerHTML = topFactors.map(f => `
-      <div class="factor-chip">${escapeHTML(f.name)}<span class="factor-value">${f.value}</span></div>
-    `).join("");
-  } else {
-    factorSection.style.display = "none";
-  }
+  document.getElementById("bmFactorChips").innerHTML = renderFactorGrid(bm.factors);
 
   const pedigreeSection = document.getElementById("bmPedigreeSection");
   if (bm.pedigree && bm.pedigree.length > 0) {
