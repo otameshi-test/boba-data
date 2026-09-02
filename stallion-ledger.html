@@ -375,7 +375,7 @@
         <button id="lineageSearchBtn">この4系統で検索</button>
 
         <div class="bms-search">
-          <div class="lineage-search-title">親系統の特定2箇所で検索(順不同・どちらかに該当すればOK)</div>
+          <div class="lineage-search-title">父母父と母母父の2箇所で検索(順不同・どちらかに該当すればOK)</div>
           <div class="bms-grid">
             <div>
               <label for="bmsInputA">系統1</label>
@@ -397,7 +397,7 @@
       <input id="bmSearch" class="search-box" placeholder="馬名・系統・父・母で検索(例: アイウィルフォロー / サンインロー系)" />
 
       <div class="bms-search" style="margin-top:16px; border-top:none; padding-top:0;">
-        <div class="lineage-search-title">親系統の特定2箇所で検索(順不同・どちらかに該当すればOK)</div>
+        <div class="lineage-search-title">父母父と母母父の2箇所で検索(順不同・どちらかに該当すればOK)</div>
         <div class="bms-grid">
           <div>
             <label for="bmLineageInputA">系統1</label>
@@ -864,7 +864,7 @@ function renderBmList(items) {
     <button class="card" data-id="${escapeHTML(bm.id)}">
       <div style="min-width:0;">
         <div class="card-name">
-          ${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}${escapeHTML(bm.name)}
+          ${escapeHTML(bm.name)}${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}
         </div>
         <div class="bm-card-meta">${escapeHTML(bm.category)} ・ ${escapeHTML(bm.coatColor)} ・ 父:${escapeHTML(bm.sire)}</div>
       </div>
@@ -908,7 +908,7 @@ function openBmDetail(id) {
 
   document.getElementById("bmPanelCategory").textContent = bm.category;
   document.getElementById("bmPanelName").innerHTML =
-    (categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : "") + escapeHTML(bm.name);
+    escapeHTML(bm.name) + (categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : "");
 
   const statHTML = `
     <div class="stat-row"><span class="stat-label">毛色</span><span class="stat-value">${escapeHTML(bm.coatColor) || "—"}</span></div>
