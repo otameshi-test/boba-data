@@ -338,29 +338,26 @@
   .ptable td.ped-label.mother { background: #B23B39; }
   .ptable td.ped-name {
     padding: 4px 8px;
-    background: var(--bg-card);
-    color: var(--ink-body);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 2px;
+    background: var(--bg-card) !important;
+    color: var(--ink-body) !important;
   }
   .ptable td.ped-name .ped-name-text {
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 100%;
+    color: var(--ink-body) !important;
   }
   .ped-factor-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
+    margin-top: 2px;
   }
   .ped-factor-tag {
     flex-shrink: 0;
     background: #38C6D9;
-    color: #06323A;
+    color: #06323A !important;
     font-size: 9px;
     font-weight: 700;
     padding: 1px 6px;
@@ -654,7 +651,7 @@ function renderPedigreeTree(entries, maxDepth = 4) {
 
   let html = `<table class="ptable"><colgroup>`;
   for (let c = 0; c < maxDepth; c++) html += `<col class="ped-col" />`;
-  html += `<col />`; // 名前列は残り幅を自動で使う
+  html += `<col style="width: calc(100% - ${maxDepth * 40}px);" />`; // 名前列は残り幅を明示的に確保
   html += `</colgroup><tbody>`;
 
   for (let i = 0; i < entries.length; i++) {
