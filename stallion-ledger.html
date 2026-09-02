@@ -302,7 +302,7 @@
   .factor-cell .factor-circle {
     width: 26px;
     height: 26px;
-    border-radius: 50%;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -340,9 +340,26 @@
     padding: 6px 10px;
     background: var(--bg-card);
     color: var(--ink-body);
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .ptable td.ped-name .ped-name-text {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .ped-factor-tag {
+    flex-shrink: 0;
+    background: #38C6D9;
+    color: #06323A;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
   }
   .source-link {
     display: inline-block;
@@ -652,7 +669,10 @@ function renderPedigreeTree(entries, maxDepth = 4) {
       rowHtml += `<td class="ped-label ${cls}"${span > 1 ? ` rowspan="${span}"` : ""}>${entry.path[c]}</td>`;
     }
     const nameColspan = maxDepth - entry.depth + 1;
-    rowHtml += `<td class="ped-name"${nameColspan > 1 ? ` colspan="${nameColspan}"` : ""}>${escapeHTML(entry.name)}</td>`;
+    const factorTags = (entry.factors || [])
+      .map(f => `<span class="ped-factor-tag">${escapeHTML(f)}</span>`)
+      .join("");
+    rowHtml += `<td class="ped-name"${nameColspan > 1 ? ` colspan="${nameColspan}"` : ""}><span class="ped-name-text">${escapeHTML(entry.name)}</span>${factorTags}</td>`;
     rowHtml += "</tr>";
     html += rowHtml;
 
