@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light" />
 <title>親系統検索</title>
 <style>
-html { color-scheme: light; }
+html { color-scheme: light; forced-color-adjust: none; }
   :root {
     --bg: #F5F1E8;
     --bg-panel: #EFE8D6;
@@ -340,15 +340,17 @@ html { color-scheme: light; }
   .ptable td.ped-label.mother { background: #B23B39; }
   .ptable td.ped-name {
     padding: 4px 8px;
-    background: var(--bg-card) !important;
-    color: var(--ink-body) !important;
+    background: #FDFBF5 !important;
+    color: #2B2620 !important;
+    forced-color-adjust: none;
   }
   .ptable td.ped-name .ped-name-text {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--ink-body) !important;
+    color: #2B2620 !important;
+    forced-color-adjust: none;
   }
   .ped-factor-tags {
     display: flex;
