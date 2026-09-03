@@ -252,6 +252,50 @@ html { color-scheme: light; forced-color-adjust: none; }
   }
   .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 0.05em; }
   .stat-value { font-size: 14px; color: var(--ink-body); font-weight: 600; }
+
+  /* 能力表グリッド(元サイトと同じレイアウト) */
+  .stats-grid {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+  .stats-grid-right {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    flex: 1;
+  }
+  .stat-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border-left: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    text-align: center;
+  }
+  .stats-grid-right .stat-cell:nth-child(4n+1) { border-left: none; }
+  .stats-grid-right .stat-cell:nth-child(n+5) { border-bottom: none; }
+  .stat-cell-distance {
+    flex: 0 0 30%;
+    border-left: none;
+    border-bottom: none;
+    border-right: 1px solid var(--border-light);
+  }
+  .stat-cell-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .stat-cell-value {
+    font-size: 13px;
+    color: var(--ink-body);
+    font-weight: 700;
+  }
+  .stat-cell-distance .stat-cell-value { font-size: 13px; }
   .talent-box {
     background: var(--bg-panel);
     border: 1px solid var(--border);
@@ -781,6 +825,34 @@ function rankBadgeHTML(value) {
   return `<span class="rank-badge" style="background:${style.bg};color:${style.fg};">${value}</span>`;
 }
 
+// 能力表をコンパクトなグリッド形式で描画する(元サイトと同じレイアウト)
+// 左に距離(2行分の高さ)、右に成長/適応力/体質/気性(1行目)・脚質/実績/底力/安定(2行目)
+function renderStatsGrid(stats) {
+  const cell = (label, valueHTML) => `
+    <div class="stat-cell">
+      <div class="stat-cell-label">${escapeHTML(label)}</div>
+      <div class="stat-cell-value">${valueHTML}</div>
+    </div>`;
+
+  return `
+    <div class="stats-grid">
+      <div class="stat-cell stat-cell-distance">
+        <div class="stat-cell-label">距離</div>
+        <div class="stat-cell-value">${escapeHTML(stats["距離"]) || "—"}</div>
+      </div>
+      <div class="stats-grid-right">
+        ${cell("成長", escapeHTML(stats["成長"]) || "—")}
+        ${cell("適応力", rankBadgeHTML(stats["適応力"]))}
+        ${cell("体質", rankBadgeHTML(stats["体質"]))}
+        ${cell("気性", rankBadgeHTML(stats["気性"]))}
+        ${cell("脚質", escapeHTML(stats["脚質"]) || "—")}
+        ${cell("実績", rankBadgeHTML(stats["実績"]))}
+        ${cell("底力", rankBadgeHTML(stats["底力"]))}
+        ${cell("安定", rankBadgeHTML(stats["安定"]))}
+      </div>
+    </div>`;
+}
+
 function escapeHTML(str) {
   const div = document.createElement("div");
   div.textContent = str ?? "";
@@ -837,16 +909,7 @@ function openDetail(id) {
   document.getElementById("panelName").innerHTML =
     escapeHTML(s.name) + (s.subName ? `<span class="sub">-${escapeHTML(s.subName)}-</span>` : "");
 
-  const textKeys = ["距離", "成長", "脚質"];
-  const rankKeys = ["適応力", "体質", "気性", "実績", "底力", "安定"];
-  let statHTML = "";
-  textKeys.forEach(k => {
-    statHTML += `<div class="stat-row"><span class="stat-label">${k}</span><span class="stat-value">${escapeHTML(s.stats[k]) || "—"}</span></div>`;
-  });
-  rankKeys.forEach(k => {
-    statHTML += `<div class="stat-row"><span class="stat-label">${k}</span>${rankBadgeHTML(s.stats[k])}</div>`;
-  });
-  document.getElementById("statList").innerHTML = statHTML;
+  document.getElementById("statList").innerHTML = renderStatsGrid(s.stats);
 
   const talentBox = document.getElementById("talentBox");
   if (s.specialTalent && s.specialTalent.title) {
