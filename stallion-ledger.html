@@ -361,13 +361,13 @@ html { color-scheme: light; forced-color-adjust: none; }
   }
   .ped-factor-tag {
     flex-shrink: 0;
-    background: #38C6D9;
-    color: #06323A !important;
+    color: #FFFFFF !important;
     font-size: 9px;
     font-weight: 700;
     padding: 1px 6px;
     border-radius: 4px;
     white-space: nowrap;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
   }
   .source-link {
     display: inline-block;
@@ -679,7 +679,11 @@ function renderPedigreeTree(entries, maxDepth = 4) {
     const nameColspan = maxDepth - entry.depth + 1;
     const factorTags = (entry.factors || []).length
       ? `<div class="ped-factor-tags">` +
-        entry.factors.map(f => `<span class="ped-factor-tag">${escapeHTML(f)}</span>`).join("") +
+        entry.factors.map(f => {
+          const style = FACTOR_STYLE[f];
+          const bg = style ? style.color : "#6B6459";
+          return `<span class="ped-factor-tag" style="background:${bg};">${escapeHTML(f)}</span>`;
+        }).join("") +
         `</div>`
       : "";
     rowHtml += `<td class="ped-name"${nameColspan > 1 ? ` colspan="${nameColspan}"` : ""}><span class="ped-name-text">${escapeHTML(entry.name)}</span>${factorTags}</td>`;
