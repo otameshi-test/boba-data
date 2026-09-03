@@ -308,7 +308,6 @@ html { color-scheme: light; forced-color-adjust: none; }
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
     font-size: 12px;
     font-weight: 700;
     box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
@@ -361,7 +360,6 @@ html { color-scheme: light; forced-color-adjust: none; }
   }
   .ped-factor-tag {
     flex-shrink: 0;
-    color: #FFFFFF !important;
     font-size: 9px;
     font-weight: 700;
     padding: 1px 6px;
@@ -618,21 +616,29 @@ let DATA = null;
 // 元のHTMLと同じロジックで rowspan/colspan を逆算し、本物の<table>として描画する
 // 因子表示: 14項目を常に色分けグリッドで表示する(種牡馬・繁殖牝馬共通)
 const FACTOR_STYLE = {
-  "短距離": { label: "短", color: "#F0A93A" },
-  "速力":   { label: "速", color: "#4CAF50" },
-  "底力":   { label: "底", color: "#E85D9E" },
-  "長距離": { label: "長", color: "#4A6FD1" },
-  "疾走":   { label: "走", color: "#4CAF50" },
-  "中距離": { label: "中", color: "#8E44AD" },
-  "強芯":   { label: "強", color: "#2C3E7A" },
-  "雷駆":   { label: "雷", color: "#7E57C2" },
-  "堅実":   { label: "堅", color: "#C2185B" },
-  "気性難": { label: "難", color: "#2B2B2B" },
-  "適応力": { label: "適", color: "#00BCD4" },
-  "丈夫":   { label: "丈", color: "#4CAF50" },
-  "早熟":   { label: "早", color: "#FDD835" },
-  "晩成":   { label: "晩", color: "#4CAF50" },
+  "短距離": { label: "短", color: "#FDFD00" },
+  "速力":   { label: "速", color: "#FDFDA2" },
+  "底力":   { label: "底", color: "#FC6E00" },
+  "長距離": { label: "長", color: "#03FDFD" },
+  "疾走":   { label: "走", color: "#F1EEEA" },
+  "中距離": { label: "中", color: "#117E28" },
+  "強芯":   { label: "強", color: "#3A406A" },
+  "雷駆":   { label: "雷", color: "#D24060" },
+  "堅実":   { label: "堅", color: "#A1A1A3" },
+  "気性難": { label: "難", color: "#FC00FC" },
+  "適応力": { label: "適", color: "#4682FF" },
+  "丈夫":   { label: "丈", color: "#FEABDD" },
+  "早熟":   { label: "早", color: "#02FE02" },
+  "晩成":   { label: "晩", color: "#A7DE0D" },
 };
+// 背景の明るさに応じて、読みやすい文字色(黒 or 白)を自動選択する
+function contrastTextColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? "#000000" : "#FFFFFF";
+}
 const FACTOR_ORDER = Object.keys(FACTOR_STYLE);
 
 function renderFactorGrid(factors) {
@@ -644,7 +650,7 @@ function renderFactorGrid(factors) {
     const value = byName[name] || 0;
     return `
       <div class="factor-cell${value > 0 ? " has-value" : ""}" title="${escapeHTML(name)}">
-        <div class="factor-circle" style="background:${style.color};">${style.label}</div>
+        <div class="factor-circle" style="background:${style.color}; color:${contrastTextColor(style.color)};">${style.label}</div>
         <div class="factor-num">${String(value).padStart(2, "0")}</div>
       </div>`;
   }).join("") + `</div>`;
@@ -682,7 +688,8 @@ function renderPedigreeTree(entries, maxDepth = 4) {
         entry.factors.map(f => {
           const style = FACTOR_STYLE[f];
           const bg = style ? style.color : "#6B6459";
-          return `<span class="ped-factor-tag" style="background:${bg};">${escapeHTML(f)}</span>`;
+          const fg = contrastTextColor(bg);
+          return `<span class="ped-factor-tag" style="background:${bg}; color:${fg};">${escapeHTML(f)}</span>`;
         }).join("") +
         `</div>`
       : "";
