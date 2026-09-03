@@ -650,7 +650,7 @@ function renderFactorGrid(factors) {
     const value = byName[name] || 0;
     return `
       <div class="factor-cell${value > 0 ? " has-value" : ""}" title="${escapeHTML(name)}">
-        <div class="factor-circle" style="background:${style.color}; color:${contrastTextColor(style.color)};">${style.label}</div>
+        <div class="factor-circle" style="background:${style.color}; color:#000000;">${style.label}</div>
         <div class="factor-num">${String(value).padStart(2, "0")}</div>
       </div>`;
   }).join("") + `</div>`;
@@ -688,8 +688,7 @@ function renderPedigreeTree(entries, maxDepth = 4) {
         entry.factors.map(f => {
           const style = FACTOR_STYLE[f];
           const bg = style ? style.color : "#6B6459";
-          const fg = contrastTextColor(bg);
-          return `<span class="ped-factor-tag" style="background:${bg}; color:${fg};">${escapeHTML(f)}</span>`;
+          return `<span class="ped-factor-tag" style="background:${bg}; color:#000000;">${escapeHTML(f)}</span>`;
         }).join("") +
         `</div>`
       : "";
