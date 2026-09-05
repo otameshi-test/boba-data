@@ -1021,7 +1021,6 @@ fetch(DATA_URL)
   })
   .then(json => {
     DATA = json;
-    buildStallionCategoryMap();
     document.getElementById("loading").style.display = "none";
     runSearch();
   })
@@ -1047,44 +1046,32 @@ function categoryRankLabel(icon) {
   return CATEGORY_LABEL_MAP[icon] || "";
 }
 
-// 馬名→{系統, 親系統のルート(英語名)} の対応表(種牡馬データから構築。母父・父などの系統を調べるのに使う)
-let STALLION_INFO_BY_NAME = null;
-function buildStallionCategoryMap() {
-  if (!DATA) return;
-  STALLION_INFO_BY_NAME = {};
-  DATA.forEach(s => {
-    if (s.name && !(s.name in STALLION_INFO_BY_NAME)) {
-      const parentRoot = (s.parentLineage && s.parentLineage[0]) ? s.parentLineage[0].name : "";
-      STALLION_INFO_BY_NAME[s.name] = { category: s.category || "", parentRoot };
-    }
-  });
-}
-function lookupCategoryByHorseName(name) {
-  if (!name || !STALLION_INFO_BY_NAME) return "";
-  return (STALLION_INFO_BY_NAME[name] && STALLION_INFO_BY_NAME[name].category) || "";
-}
-function lookupParentRootByHorseName(name) {
-  if (!name || !STALLION_INFO_BY_NAME) return "";
-  return (STALLION_INFO_BY_NAME[name] && STALLION_INFO_BY_NAME[name].parentRoot) || "";
+// entries(parentLineage/childLineageの配列)から特定の位置(path)の要素を探す
+function findLineageEntry(entries, pathStr) {
+  return (entries || []).find(e => e.path.join(">") === pathStr);
 }
 
 function renderBmList(items) {
-  if (!STALLION_INFO_BY_NAME && DATA) buildStallionCategoryMap();
-
   const listEl = document.getElementById("bmList");
   listEl.innerHTML = items.map(bm => {
-    const sireCategory = bm.category || lookupCategoryByHorseName(bm.sire);
-    const sireParentRoot = lookupParentRootByHorseName(bm.sire);
-    const damSireCategory = lookupCategoryByHorseName(bm.damSire);
-    const damSireParentRoot = lookupParentRootByHorseName(bm.damSire);
+    const sireParent = findLineageEntry(bm.parentLineage, "父");
+    const sireChild = findLineageEntry(bm.childLineage, "父");
+    const damSireParent = findLineageEntry(bm.parentLineage, "母>父");
+    const damSireChild = findLineageEntry(bm.childLineage, "母>父");
+
+    const sireLine = ["父:" + bm.sire, sireParent ? sireParent.name : null, sireChild ? sireChild.name : null]
+      .filter(Boolean).join("・");
+    const damSireLine = ["母父:" + bm.damSire, damSireParent ? damSireParent.name : null, damSireChild ? damSireChild.name : null]
+      .filter(Boolean).join("・");
+
     return `
     <button class="card" data-id="${escapeHTML(bm.id)}">
       <div style="min-width:0;">
         <div class="card-name">
           ${escapeHTML(bm.name)}${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}${bm.coatColor ? `<span class="notable-badge">${escapeHTML(bm.coatColor)}</span>` : ""}
         </div>
-        <div class="bm-card-meta">${sireCategory ? escapeHTML(sireCategory) + " ・ " : ""}父:${escapeHTML(bm.sire)}${sireParentRoot ? `(${escapeHTML(sireParentRoot)})` : ""}</div>
-        <div class="bm-card-meta">${damSireCategory ? escapeHTML(damSireCategory) + " ・ " : ""}母父:${escapeHTML(bm.damSire)}${damSireParentRoot ? `(${escapeHTML(damSireParentRoot)})` : ""}</div>
+        <div class="bm-card-meta">${escapeHTML(sireLine)}</div>
+        <div class="bm-card-meta">${escapeHTML(damSireLine)}</div>
       </div>
     </button>
   `;
