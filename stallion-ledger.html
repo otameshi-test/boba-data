@@ -605,6 +605,11 @@ html { color-scheme: light; forced-color-adjust: none; }
         <div id="bmFactorChips" class="factor-chips"></div>
       </div>
 
+      <div id="bmChildLineageSection" style="display:none;">
+        <div class="section-title">子系統</div>
+        <div id="bmChildLineage"></div>
+      </div>
+
       <div id="bmPedigreeSection" style="display:none;">
         <div class="section-title">血統</div>
         <div id="bmPedigree"></div>
@@ -1016,6 +1021,7 @@ fetch(DATA_URL)
   })
   .then(json => {
     DATA = json;
+    buildStallionCategoryMap();
     document.getElementById("loading").style.display = "none";
     runSearch();
   })
@@ -1041,18 +1047,40 @@ function categoryRankLabel(icon) {
   return CATEGORY_LABEL_MAP[icon] || "";
 }
 
+// 馬名→系統の対応表(種牡馬データから構築。母父などの系統を調べるのに使う)
+let STALLION_CATEGORY_BY_NAME = null;
+function buildStallionCategoryMap() {
+  if (!DATA) return;
+  STALLION_CATEGORY_BY_NAME = {};
+  DATA.forEach(s => {
+    if (s.name && s.category && !(s.name in STALLION_CATEGORY_BY_NAME)) {
+      STALLION_CATEGORY_BY_NAME[s.name] = s.category;
+    }
+  });
+}
+function lookupCategoryByHorseName(name) {
+  if (!name || !STALLION_CATEGORY_BY_NAME) return "";
+  return STALLION_CATEGORY_BY_NAME[name] || "";
+}
+
 function renderBmList(items) {
+  if (!STALLION_CATEGORY_BY_NAME && DATA) buildStallionCategoryMap();
+
   const listEl = document.getElementById("bmList");
-  listEl.innerHTML = items.map(bm => `
+  listEl.innerHTML = items.map(bm => {
+    const damSireCategory = lookupCategoryByHorseName(bm.damSire);
+    return `
     <button class="card" data-id="${escapeHTML(bm.id)}">
       <div style="min-width:0;">
         <div class="card-name">
-          ${escapeHTML(bm.name)}${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}
+          ${escapeHTML(bm.name)}${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}${bm.coatColor ? `<span class="notable-badge">${escapeHTML(bm.coatColor)}</span>` : ""}
         </div>
-        <div class="bm-card-meta">${escapeHTML(bm.category)} ・ ${escapeHTML(bm.coatColor)} ・ 父:${escapeHTML(bm.sire)}</div>
+        <div class="bm-card-meta">${escapeHTML(bm.category)} ・ 父:${escapeHTML(bm.sire)}</div>
+        <div class="bm-card-meta">母父:${escapeHTML(bm.damSire)}${damSireCategory ? `(${escapeHTML(damSireCategory)})` : ""}</div>
       </div>
     </button>
-  `).join("");
+  `;
+  }).join("");
 
   listEl.querySelectorAll(".card").forEach(btn => {
     btn.addEventListener("click", () => openBmDetail(btn.dataset.id));
@@ -1102,6 +1130,14 @@ function openBmDetail(id) {
   document.getElementById("bmStatList").innerHTML = statHTML;
 
   document.getElementById("bmFactorChips").innerHTML = renderFactorGrid(bm.factors);
+
+  const childLineageSection = document.getElementById("bmChildLineageSection");
+  if (bm.childLineage && bm.childLineage.length > 0) {
+    childLineageSection.style.display = "block";
+    document.getElementById("bmChildLineage").innerHTML = renderPedigreeTree(bm.childLineage);
+  } else {
+    childLineageSection.style.display = "none";
+  }
 
   const pedigreeSection = document.getElementById("bmPedigreeSection");
   if (bm.pedigree && bm.pedigree.length > 0) {
