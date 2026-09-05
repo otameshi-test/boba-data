@@ -1047,36 +1047,44 @@ function categoryRankLabel(icon) {
   return CATEGORY_LABEL_MAP[icon] || "";
 }
 
-// 馬名→系統の対応表(種牡馬データから構築。母父などの系統を調べるのに使う)
-let STALLION_CATEGORY_BY_NAME = null;
+// 馬名→{系統, 親系統のルート(英語名)} の対応表(種牡馬データから構築。母父・父などの系統を調べるのに使う)
+let STALLION_INFO_BY_NAME = null;
 function buildStallionCategoryMap() {
   if (!DATA) return;
-  STALLION_CATEGORY_BY_NAME = {};
+  STALLION_INFO_BY_NAME = {};
   DATA.forEach(s => {
-    if (s.name && s.category && !(s.name in STALLION_CATEGORY_BY_NAME)) {
-      STALLION_CATEGORY_BY_NAME[s.name] = s.category;
+    if (s.name && !(s.name in STALLION_INFO_BY_NAME)) {
+      const parentRoot = (s.parentLineage && s.parentLineage[0]) ? s.parentLineage[0].name : "";
+      STALLION_INFO_BY_NAME[s.name] = { category: s.category || "", parentRoot };
     }
   });
 }
 function lookupCategoryByHorseName(name) {
-  if (!name || !STALLION_CATEGORY_BY_NAME) return "";
-  return STALLION_CATEGORY_BY_NAME[name] || "";
+  if (!name || !STALLION_INFO_BY_NAME) return "";
+  return (STALLION_INFO_BY_NAME[name] && STALLION_INFO_BY_NAME[name].category) || "";
+}
+function lookupParentRootByHorseName(name) {
+  if (!name || !STALLION_INFO_BY_NAME) return "";
+  return (STALLION_INFO_BY_NAME[name] && STALLION_INFO_BY_NAME[name].parentRoot) || "";
 }
 
 function renderBmList(items) {
-  if (!STALLION_CATEGORY_BY_NAME && DATA) buildStallionCategoryMap();
+  if (!STALLION_INFO_BY_NAME && DATA) buildStallionCategoryMap();
 
   const listEl = document.getElementById("bmList");
   listEl.innerHTML = items.map(bm => {
+    const sireCategory = bm.category || lookupCategoryByHorseName(bm.sire);
+    const sireParentRoot = lookupParentRootByHorseName(bm.sire);
     const damSireCategory = lookupCategoryByHorseName(bm.damSire);
+    const damSireParentRoot = lookupParentRootByHorseName(bm.damSire);
     return `
     <button class="card" data-id="${escapeHTML(bm.id)}">
       <div style="min-width:0;">
         <div class="card-name">
           ${escapeHTML(bm.name)}${categoryRankLabel(bm.categoryIcon) ? `<span class="notable-badge">${escapeHTML(categoryRankLabel(bm.categoryIcon))}</span>` : ""}${bm.coatColor ? `<span class="notable-badge">${escapeHTML(bm.coatColor)}</span>` : ""}
         </div>
-        <div class="bm-card-meta">${escapeHTML(bm.category)} ・ 父:${escapeHTML(bm.sire)}</div>
-        <div class="bm-card-meta">母父:${escapeHTML(bm.damSire)}${damSireCategory ? `(${escapeHTML(damSireCategory)})` : ""}</div>
+        <div class="bm-card-meta">${sireCategory ? escapeHTML(sireCategory) + " ・ " : ""}父:${escapeHTML(bm.sire)}${sireParentRoot ? `(${escapeHTML(sireParentRoot)})` : ""}</div>
+        <div class="bm-card-meta">${damSireCategory ? escapeHTML(damSireCategory) + " ・ " : ""}母父:${escapeHTML(bm.damSire)}${damSireParentRoot ? `(${escapeHTML(damSireParentRoot)})` : ""}</div>
       </div>
     </button>
   `;
