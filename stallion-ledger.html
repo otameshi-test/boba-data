@@ -60,6 +60,23 @@ html { color-scheme: light; forced-color-adjust: none; }
     outline: none;
     margin-top: 16px;
   }
+  .filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ink-body);
+  }
+  .filter-row-label { color: var(--muted); font-size: 12px; }
+  .filter-checkbox, .filter-radio {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .filter-checkbox input, .filter-radio input { cursor: pointer; }
   .lineage-search {
     margin-top: 20px;
     padding-top: 16px;
@@ -486,6 +503,20 @@ html { color-scheme: light; forced-color-adjust: none; }
     <div id="stallionControls">
       <input id="search" class="search-box" placeholder="馬名・系統で検索(例: アイリッシュリヴァー / テディ系)" />
 
+      <div class="filter-row">
+        <label class="filter-checkbox">
+          <input type="checkbox" id="ultimateFilter" />
+          究極のみ(才能枠5つ)
+        </label>
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-row-label">非凡な才能:</span>
+        <label class="filter-radio"><input type="radio" name="talentFilter" value="all" checked /> 全て</label>
+        <label class="filter-radio"><input type="radio" name="talentFilter" value="yes" /> 非凡有</label>
+        <label class="filter-radio"><input type="radio" name="talentFilter" value="no" /> 非凡無</label>
+      </div>
+
       <div class="lineage-search">
         <div class="lineage-search-title">親系統で検索(4系統を選択)</div>
         <div class="lineage-grid">
@@ -804,6 +835,7 @@ document.getElementById("lineageSearchBtn").addEventListener("click", () => {
     noResult.style.display = "none";
     countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み`;
     document.getElementById("list").innerHTML = "";
+    lastStallionRenderFn = null;
     return;
   }
 
@@ -811,17 +843,21 @@ document.getElementById("lineageSearchBtn").addEventListener("click", () => {
   const required = {};
   selected.forEach(name => { required[name] = (required[name] || 0) + 1; });
 
-  const matches = DATA.filter(s => {
+  const baseMatches = DATA.filter(s => {
     const avail = {};
     (s.parentLineage || []).forEach(entry => { avail[entry.name] = (avail[entry.name] || 0) + 1; });
     return Object.entries(required).every(([name, count]) => (avail[name] || 0) >= count);
   });
 
   document.getElementById("search").value = "";
-  emptyPrompt.style.display = "none";
-  noResult.style.display = matches.length === 0 ? "block" : "none";
-  countEl.textContent = `系統検索(${selected.join(" / ")}): ${matches.length}件`;
-  renderList(matches.slice(0, 150));
+  lastStallionRenderFn = () => {
+    const filtered = applyStallionExtraFilters(baseMatches);
+    emptyPrompt.style.display = "none";
+    noResult.style.display = filtered.length === 0 ? "block" : "none";
+    countEl.textContent = `系統検索(${selected.join(" / ")}): ${filtered.length}件`;
+    renderList(filtered.slice(0, 150));
+  };
+  lastStallionRenderFn();
 });
 
 function rankBadgeHTML(value) {
@@ -882,6 +918,36 @@ function renderList(items) {
   });
 }
 
+// 究極(才能枠5)・非凡有無の追加フィルター
+const ULTIMATE_ICONS = ["list_icn_cat_11.png", "list_icn_cat_12.png"];
+function applyStallionExtraFilters(list) {
+  const ultimateOnly = document.getElementById("ultimateFilter").checked;
+  const talentMode = (document.querySelector('input[name="talentFilter"]:checked') || {}).value || "all";
+
+  let out = list;
+  if (ultimateOnly) {
+    out = out.filter(s => ULTIMATE_ICONS.includes(s.categoryIcon));
+  }
+  if (talentMode === "yes") {
+    out = out.filter(s => s.specialTalent && s.specialTalent.title);
+  } else if (talentMode === "no") {
+    out = out.filter(s => !(s.specialTalent && s.specialTalent.title));
+  }
+  return out;
+}
+
+// 検索モード(名前検索/系統検索/血統2箇所検索)を問わず、
+// フィルター(究極・非凡)変更時に再描画できるようにするための関数を保持する
+let lastStallionRenderFn = null;
+document.getElementById("ultimateFilter").addEventListener("change", () => {
+  if (lastStallionRenderFn) lastStallionRenderFn();
+});
+document.querySelectorAll('input[name="talentFilter"]').forEach(el => {
+  el.addEventListener("change", () => {
+    if (lastStallionRenderFn) lastStallionRenderFn();
+  });
+});
+
 function runSearch() {
   const q = document.getElementById("search").value.trim();
   const emptyPrompt = document.getElementById("emptyPrompt");
@@ -893,17 +959,22 @@ function runSearch() {
     emptyPrompt.style.display = "block";
     noResult.style.display = "none";
     countEl.textContent = DATA ? `全 ${DATA.length.toLocaleString()} 件を読み込み済み` : "";
+    lastStallionRenderFn = null;
     return;
   }
 
-  const filtered = DATA.filter(s =>
+  const baseMatches = DATA.filter(s =>
     s.name.includes(q) || (s.subName && s.subName.includes(q)) || s.category.includes(q)
-  ).slice(0, 150);
+  );
 
-  emptyPrompt.style.display = "none";
-  noResult.style.display = filtered.length === 0 ? "block" : "none";
-  countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み / ${filtered.length}件表示中(最大150件)`;
-  renderList(filtered);
+  lastStallionRenderFn = () => {
+    const filtered = applyStallionExtraFilters(baseMatches).slice(0, 150);
+    emptyPrompt.style.display = "none";
+    noResult.style.display = filtered.length === 0 ? "block" : "none";
+    countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み / ${filtered.length}件表示中(最大150件)`;
+    renderList(filtered);
+  };
+  lastStallionRenderFn();
 }
 
 function openDetail(id) {
@@ -986,11 +1057,12 @@ document.getElementById("bmsSearchBtn").addEventListener("click", () => {
     noResult.style.display = "none";
     countEl.textContent = `全 ${DATA.length.toLocaleString()} 件を読み込み済み`;
     document.getElementById("list").innerHTML = "";
+    lastStallionRenderFn = null;
     return;
   }
 
   const selected = [valA, valB].filter(Boolean);
-  const matches = DATA.filter(s => {
+  const baseMatches = DATA.filter(s => {
     const a = findByPath(s.parentLineage, BMS_POS_A);
     const b = findByPath(s.parentLineage, BMS_POS_B);
     const available = [];
@@ -1008,10 +1080,14 @@ document.getElementById("bmsSearchBtn").addEventListener("click", () => {
   });
 
   document.getElementById("search").value = "";
-  emptyPrompt.style.display = "none";
-  noResult.style.display = matches.length === 0 ? "block" : "none";
-  countEl.textContent = `親系統2箇所検索(${selected.join(" / ")}): ${matches.length}件`;
-  renderList(matches.slice(0, 150));
+  lastStallionRenderFn = () => {
+    const filtered = applyStallionExtraFilters(baseMatches);
+    emptyPrompt.style.display = "none";
+    noResult.style.display = filtered.length === 0 ? "block" : "none";
+    countEl.textContent = `親系統2箇所検索(${selected.join(" / ")}): ${filtered.length}件`;
+    renderList(filtered.slice(0, 150));
+  };
+  lastStallionRenderFn();
 });
 
 fetch(DATA_URL)
