@@ -195,17 +195,23 @@ html { color-scheme: light; forced-color-adjust: none; }
   .card-name .sub { color: var(--accent); font-size: 13px; font-weight: 400; }
   .card-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .badges { display: flex; gap: 4px; flex-shrink: 0; }
-  .rank-badge {
+  .rank-letter {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    font-size: 13px;
+    min-width: 22px;
+    font-size: 18px;
     font-weight: 700;
     font-family: 'Shippori Mincho', 'Yu Mincho', serif;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+    text-shadow:
+      -1.5px -1.5px 0 #000,
+      1.5px -1.5px 0 #000,
+      -1.5px 1.5px 0 #000,
+      1.5px 1.5px 0 #000,
+      0 1.5px 0 #000,
+      0 -1.5px 0 #000,
+      1.5px 0 0 #000,
+      -1.5px 0 0 #000;
   }
   .rank-dash { color: var(--muted-light); }
 
@@ -608,6 +614,11 @@ html { color-scheme: light; forced-color-adjust: none; }
         <div id="factorChips" class="factor-chips"></div>
       </div>
 
+      <div id="childLineageSection" style="display:none;">
+        <div class="section-title">子系統</div>
+        <div id="childLineage"></div>
+      </div>
+
       <div id="pedigreeSection" style="display:none;">
         <div class="section-title">血統</div>
         <div id="pedigree"></div>
@@ -699,12 +710,12 @@ document.getElementById("tabBroodmare").addEventListener("click", () => {
 });
 
 const RANK_STYLES = {
-  "◎": { bg: "#B8860B", fg: "#FFF8E7" },
-  "○": { bg: "#3D6B4A", fg: "#F3F7F2" },
-  "△": { bg: "#8A8478", fg: "#F5F1E8" },
-  "A": { bg: "#2F5233", fg: "#F3F7F2" },
-  "B": { bg: "#A97142", fg: "#FFF8E7" },
-  "C": { bg: "#8C5B4A", fg: "#F5F1E8" },
+  "◎": { color: "#D62F2F" },
+  "○": { color: "#2F5FD6" },
+  "△": { color: "#D6A62F" },
+  "A": { color: "#D62F2F" },
+  "B": { color: "#2F5FD6" },
+  "C": { color: "#D6A62F" },
 };
 
 let DATA = null;
@@ -862,8 +873,8 @@ document.getElementById("lineageSearchBtn").addEventListener("click", () => {
 
 function rankBadgeHTML(value) {
   if (!value) return '<span class="rank-dash">—</span>';
-  const style = RANK_STYLES[value] || { bg: "#6B6459", fg: "#F5F1E8" };
-  return `<span class="rank-badge" style="background:${style.bg};color:${style.fg};">${value}</span>`;
+  const style = RANK_STYLES[value] || { color: "#6B6459" };
+  return `<span class="rank-letter" style="color:${style.color};">${value}</span>`;
 }
 
 // 能力表をコンパクトなグリッド形式で描画する(元サイトと同じレイアウト)
@@ -999,6 +1010,14 @@ function openDetail(id) {
   }
 
   document.getElementById("factorChips").innerHTML = renderFactorGrid(s.factors);
+
+  const childLineageSection = document.getElementById("childLineageSection");
+  if (s.childLineage && s.childLineage.length > 0) {
+    childLineageSection.style.display = "block";
+    document.getElementById("childLineage").innerHTML = renderPedigreeTree(s.childLineage);
+  } else {
+    childLineageSection.style.display = "none";
+  }
 
   const pedigreeSection = document.getElementById("pedigreeSection");
   if (s.pedigree && s.pedigree.length > 0) {
