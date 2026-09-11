@@ -508,6 +508,10 @@ html { color-scheme: light; forced-color-adjust: none; }
           <input type="checkbox" id="ultimateFilter" />
           究極のみ(才能枠5つ)
         </label>
+        <label class="filter-checkbox">
+          <input type="checkbox" id="perfectCrossFilter" />
+          超完璧(親系統4代目8頭が全て重複なし)
+        </label>
       </div>
 
       <div class="filter-row">
@@ -923,15 +927,28 @@ function renderList(items) {
   });
 }
 
-// 究極(才能枠5)・非凡有無の追加フィルター
+// 究極(才能枠5)・非凡有無・超完璧の追加フィルター
 const ULTIMATE_ICONS = ["list_icn_cat_11.png", "list_icn_cat_12.png"];
+
+// 親系統ツリーの4代目(depth4)8頭が、すべて重複なく異なる系統かどうか
+function isPerfectCross(s) {
+  const depth4 = (s.parentLineage || []).filter(e => e.depth === 4);
+  if (depth4.length < 8) return false;
+  const names = depth4.map(e => e.name);
+  return new Set(names).size === names.length;
+}
+
 function applyStallionExtraFilters(list) {
   const ultimateOnly = document.getElementById("ultimateFilter").checked;
+  const perfectCrossOnly = document.getElementById("perfectCrossFilter").checked;
   const talentMode = (document.querySelector('input[name="talentFilter"]:checked') || {}).value || "all";
 
   let out = list;
   if (ultimateOnly) {
     out = out.filter(s => ULTIMATE_ICONS.includes(s.categoryIcon));
+  }
+  if (perfectCrossOnly) {
+    out = out.filter(isPerfectCross);
   }
   if (talentMode === "yes") {
     out = out.filter(s => s.specialTalent && s.specialTalent.title);
@@ -942,9 +959,12 @@ function applyStallionExtraFilters(list) {
 }
 
 // 検索モード(名前検索/系統検索/血統2箇所検索)を問わず、
-// フィルター(究極・非凡)変更時に再描画できるようにするための関数を保持する
+// フィルター(究極・非凡・超完璧)変更時に再描画できるようにするための関数を保持する
 let lastStallionRenderFn = null;
 document.getElementById("ultimateFilter").addEventListener("change", () => {
+  if (lastStallionRenderFn) lastStallionRenderFn();
+});
+document.getElementById("perfectCrossFilter").addEventListener("change", () => {
   if (lastStallionRenderFn) lastStallionRenderFn();
 });
 document.querySelectorAll('input[name="talentFilter"]').forEach(el => {
