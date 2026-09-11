@@ -77,6 +77,17 @@ html { color-scheme: light; forced-color-adjust: none; }
     cursor: pointer;
   }
   .filter-checkbox input, .filter-radio input { cursor: pointer; }
+  .filter-search-btn {
+    margin-left: auto;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--green);
+    color: #F3F7F2;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
   .lineage-search {
     margin-top: 20px;
     padding-top: 16px;
@@ -519,6 +530,7 @@ html { color-scheme: light; forced-color-adjust: none; }
         <label class="filter-radio"><input type="radio" name="talentFilter" value="all" checked /> 全て</label>
         <label class="filter-radio"><input type="radio" name="talentFilter" value="yes" /> 非凡有</label>
         <label class="filter-radio"><input type="radio" name="talentFilter" value="no" /> 非凡無</label>
+        <button id="filterOnlySearchBtn" class="filter-search-btn">この条件で検索</button>
       </div>
 
       <div class="lineage-search">
@@ -931,11 +943,37 @@ function renderList(items) {
 const ULTIMATE_ICONS = ["list_icn_cat_11.png", "list_icn_cat_12.png"];
 
 // 親系統ツリーの4代目(depth4)8頭が、すべて重複なく異なる系統かどうか
+function findByPathStr(entries, pathStr) {
+  return (entries || []).find(e => e.path.join(">") === pathStr);
+}
+
+const LEAF_PATHS = [
+  "父>父>父>父", "父>父>母>父", "父>母>父>父", "父>母>母>父",
+  "母>父>父>父", "母>父>母>父", "母>母>父>父", "母>母>母>父",
+];
+
+// 8つの枝それぞれの代表値を取得する。
+// 「父父父父」の枝だけは特別扱い: 1〜3代目が全て同じ名前なら、
+// (4代目の値ではなく)その繰り返されている名前を採用する。
+function get8LineageValues(parentLineage) {
+  const d1 = findByPathStr(parentLineage, "父");
+  const d2 = findByPathStr(parentLineage, "父>父");
+  const d3 = findByPathStr(parentLineage, "父>父>父");
+  let paternalOverride = null;
+  if (d1 && d2 && d3 && d1.name === d2.name && d2.name === d3.name) {
+    paternalOverride = d1.name;
+  }
+  return LEAF_PATHS.map(p => {
+    if (p === "父>父>父>父" && paternalOverride) return paternalOverride;
+    const e = findByPathStr(parentLineage, p);
+    return e ? e.name : null;
+  });
+}
+
 function isPerfectCross(s) {
-  const depth4 = (s.parentLineage || []).filter(e => e.depth === 4);
-  if (depth4.length < 8) return false;
-  const names = depth4.map(e => e.name);
-  return new Set(names).size === names.length;
+  const values = get8LineageValues(s.parentLineage || []);
+  if (values.some(v => v === null)) return false;
+  return new Set(values).size === values.length;
 }
 
 function applyStallionExtraFilters(list) {
@@ -971,6 +1009,25 @@ document.querySelectorAll('input[name="talentFilter"]').forEach(el => {
   el.addEventListener("change", () => {
     if (lastStallionRenderFn) lastStallionRenderFn();
   });
+});
+
+// 「究極のみ」「超完璧」「非凡な才能」の条件だけで、全件を対象に検索する
+document.getElementById("filterOnlySearchBtn").addEventListener("click", () => {
+  if (!DATA) return;
+
+  document.getElementById("search").value = "";
+  const emptyPrompt = document.getElementById("emptyPrompt");
+  const noResult = document.getElementById("noResult");
+  const countEl = document.getElementById("count");
+
+  lastStallionRenderFn = () => {
+    const filtered = applyStallionExtraFilters(DATA);
+    emptyPrompt.style.display = "none";
+    noResult.style.display = filtered.length === 0 ? "block" : "none";
+    countEl.textContent = `条件検索: ${filtered.length}件`;
+    renderList(filtered.slice(0, 150));
+  };
+  lastStallionRenderFn();
 });
 
 function runSearch() {
