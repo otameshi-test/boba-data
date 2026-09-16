@@ -566,6 +566,21 @@ html { color-scheme: light; forced-color-adjust: none; }
       <input id="bmSearch" class="search-box" placeholder="馬名・系統・父・母で検索(例: アイウィルフォロー / サンインロー系)" />
 
       <div class="bms-search" style="margin-top:16px; border-top:none; padding-top:0;">
+        <div class="lineage-search-title">父・母父の親系統で検索</div>
+        <div class="bms-grid">
+          <div>
+            <label for="bmSireLineageSelect">父の系統</label>
+            <select id="bmSireLineageSelect"></select>
+          </div>
+          <div>
+            <label for="bmDamSireLineageSelect">母父の系統</label>
+            <select id="bmDamSireLineageSelect"></select>
+          </div>
+        </div>
+        <button id="bmSireLineageSearchBtn" class="bms-search-btn">この条件で検索</button>
+      </div>
+
+      <div class="bms-search">
         <div class="lineage-search-title">父母父と母母父の2箇所で検索(順不同・どちらかに該当すればOK)</div>
         <div class="bms-grid">
           <div>
@@ -1333,8 +1348,48 @@ function populateBmLineageSelects() {
     LINEAGE_NAMES.map(n => `<option value="${n}">${n}</option>`).join("");
   document.getElementById("bmLineageInputA").innerHTML = options;
   document.getElementById("bmLineageInputB").innerHTML = options;
+  document.getElementById("bmSireLineageSelect").innerHTML = options;
+  document.getElementById("bmDamSireLineageSelect").innerHTML = options;
 }
 populateBmLineageSelects();
+
+document.getElementById("bmSireLineageSearchBtn").addEventListener("click", () => {
+  if (!BROODMARE_DATA) return;
+
+  const sireVal = document.getElementById("bmSireLineageSelect").value.trim();
+  const damSireVal = document.getElementById("bmDamSireLineageSelect").value.trim();
+
+  const emptyPrompt = document.getElementById("bmEmptyPrompt");
+  const noResult = document.getElementById("bmNoResult");
+  const countEl = document.getElementById("bmCount");
+
+  if (!sireVal && !damSireVal) {
+    emptyPrompt.style.display = "block";
+    noResult.style.display = "none";
+    countEl.textContent = `全 ${BROODMARE_DATA.length.toLocaleString()} 件を読み込み済み`;
+    document.getElementById("bmList").innerHTML = "";
+    return;
+  }
+
+  const matches = BROODMARE_DATA.filter(bm => {
+    if (sireVal) {
+      const e = findLineageEntry(bm.parentLineage, "父");
+      if (!e || e.name !== sireVal) return false;
+    }
+    if (damSireVal) {
+      const e = findLineageEntry(bm.parentLineage, "母>父");
+      if (!e || e.name !== damSireVal) return false;
+    }
+    return true;
+  });
+
+  document.getElementById("bmSearch").value = "";
+  emptyPrompt.style.display = "none";
+  noResult.style.display = matches.length === 0 ? "block" : "none";
+  const labelParts = [sireVal ? `父:${sireVal}` : null, damSireVal ? `母父:${damSireVal}` : null].filter(Boolean);
+  countEl.textContent = `父・母父の親系統検索(${labelParts.join(" / ")}): ${matches.length}件`;
+  renderBmList(matches.slice(0, 150));
+});
 
 document.getElementById("bmLineageSearchBtn").addEventListener("click", () => {
   if (!BROODMARE_DATA) return;
